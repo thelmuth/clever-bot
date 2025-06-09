@@ -169,14 +169,14 @@ async def choose_slash(interaction: discord.Interaction, color: str):
     # Send the immediate feedback from choose_die (e.g., "You chose X... Dice Y, Z discarded...")
     # This message will be public if a successful choice was made, ephemeral for errors.
     if chosen_value is not None:
-        await interaction.response.send_message(game_action_message)
+        await interaction.response.send_message(message)
     else:
         # Errors like "invalid color", "die not available", "already chosen/discarded"
-        await interaction.response.send_message(game_action_message, ephemeral=True) # Send error message from game.choose_die
+        await interaction.response.send_message(message, ephemeral=True) # Send error message from game.choose_die
         return # Do not proceed to send dice state update if there was an error
 
     # Send the direct result of the choice first (e.g., "You chose Blue... X, Y discarded")
-    # await interaction.response.send_message(game_action_message) # This line is effectively duplicated by the block above, removing.
+    # await interaction.response.send_message(message) # Corrected variable name in comment too
     # Then, send the comprehensive state update as a follow-up.
     # Pass no action_message here as the primary action was already sent.
     await _send_dice_state_update(interaction, action_message="", is_follow_up=True)
