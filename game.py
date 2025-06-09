@@ -9,9 +9,6 @@ def roll_dice():
     rolls = {color: random.randint(1, 6) for color in DICE_COLORS}
     return rolls
 
-def choose_die(available_dice, chosen_dice_this_round, color_to_choose):
-    """
-    Allows a player to choose a die.
 def choose_die(available_dice, chosen_dice_this_round, discarded_dice_this_round, color_to_choose):
     """
     Allows a player to choose a die. Implements the "Clever" discard rule.
