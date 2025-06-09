@@ -119,6 +119,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 
 # --- Slash Command Definitions ---
 
+@bot.tree.command(name="ping", description="A simple test command to check if slash commands are working.")
+async def ping_slash(interaction: discord.Interaction):
+    await interaction.response.send_message("Pong!", ephemeral=True)
+
 @bot.tree.command(name="roll", description="Rolls dice. Re-rolls available dice or does a full roll if none are available.")
 async def roll_slash(interaction: discord.Interaction):
     """Rolls dice. If dice are already available, re-rolls only those. Otherwise, rolls all 6 dice."""
