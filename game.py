@@ -13,23 +13,40 @@ def choose_die(available_dice, chosen_dice_this_round, color_to_choose):
     """
     Allows a player to choose a die.
     Modifies available_dice and chosen_dice_this_round in place.
-    Returns the value of the chosen die, or None if invalid.
+    Returns (chosen_value, message, list_of_discarded_dice_info).
+    list_of_discarded_dice_info contains strings like "Color: Value".
     """
     color_to_choose = color_to_choose.lower()
     if color_to_choose not in DICE_COLORS:
-        return None, "Invalid dice color."
+        return None, "Invalid dice color.", []
 
     if color_to_choose not in available_dice:
-        return None, f"{color_to_choose.capitalize()} die is not available to choose."
+        return None, f"{color_to_choose.capitalize()} die is not available to choose.", []
 
     chosen_value = available_dice.pop(color_to_choose)
     chosen_dice_this_round[color_to_choose] = chosen_value
 
-    # In "That's Pretty Clever", when a die is chosen, any dice with a lower value are discarded.
-    # For simplicity in this step, we'll just remove the chosen die.
-    # The full discard logic can be added later if desired.
+    message = f"You chose the {color_to_choose.capitalize()} die with value {chosen_value}."
 
-    return chosen_value, f"You chose the {color_to_choose.capitalize()} die with value {chosen_value}."
+    discarded_dice_info = []
+    # Iterate over a copy of available_dice items because we might modify the dictionary
+    # Store dice to be discarded to avoid modifying dict during iteration issues
+    dice_to_discard_colors = []
+
+    for color, value in available_dice.items():
+        if value < chosen_value:
+            dice_to_discard_colors.append(color)
+
+    if dice_to_discard_colors:
+        for color_d in dice_to_discard_colors:
+            discarded_value = available_dice.pop(color_d)
+            discarded_dice_info.append(f"{color_d.capitalize()}: {discarded_value}")
+
+        # Append to the main message about discarded dice
+        # message += "\nDiscarded dice (value less than chosen): " + ", ".join(discarded_dice_info) + "."
+        # Let's return discarded_dice_info separately for better formatting in bot.py
+
+    return chosen_value, message, discarded_dice_info
 
 # Example usage (can be removed later):
 if __name__ == '__main__':
@@ -38,18 +55,21 @@ if __name__ == '__main__':
     available_from_roll = dict(current_roll) # Make a copy
     chosen_this_round = {}
 
-    value, msg = choose_die(available_from_roll, chosen_this_round, "blue")
+    value, msg, discarded = choose_die(available_from_roll, chosen_this_round, "blue")
     print(msg)
+    print(f"Discarded: {discarded}")
     print("Available after choosing blue:", available_from_roll)
     print("Chosen this round:", chosen_this_round)
 
-    value, msg = choose_die(available_from_roll, chosen_this_round, "yellow")
+    value, msg, discarded = choose_die(available_from_roll, chosen_this_round, "yellow")
     print(msg)
+    print(f"Discarded: {discarded}")
     print("Available after choosing yellow:", available_from_roll)
     print("Chosen this round:", chosen_this_round)
 
-    value, msg = choose_die(available_from_roll, chosen_this_round, "red") # Invalid color
+    value, msg, discarded = choose_die(available_from_roll, chosen_this_round, "red") # Invalid color
     print(msg)
+    print(f"Discarded: {discarded}")
 
 def reset_dice():
     """Resets the dice state for a new round (conceptually).
