@@ -4,8 +4,9 @@ from discord.ext import commands
 from discord import app_commands # Import app_commands
 import game
 
-# TODO: Replace 'YOUR_BOT_TOKEN' with your actual bot token
-BOT_TOKEN = 'YOUR_BOT_TOKEN'
+
+with open("clever.key", "r") as f:
+    BOT_TOKEN = f.read().strip()
 
 # Intents are still needed
 intents = discord.Intents.default()
