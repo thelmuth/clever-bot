@@ -124,6 +124,8 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 async def roll_slash(interaction: discord.Interaction):
     """Rolls dice. If dice are already available, re-rolls only those. Otherwise, rolls all 6 dice."""
 
+    print("LOG: roll")
+
     roll_action_description = ""
 
     if bot.available_dice:
@@ -148,6 +150,9 @@ async def roll_slash(interaction: discord.Interaction):
 @app_commands.describe(color="The color of the die to choose.")
 async def choose_slash(interaction: discord.Interaction, color: str):
     """Chooses a die from the available dice and updates game state."""
+
+    print("LOG: choose")
+
     # Initial availability checks (slightly simplified as game.choose_die also checks)
     if not bot.available_dice and not bot.chosen_dice_this_round and not bot.discarded_dice_this_round:
         await interaction.response.send_message("No dice have been rolled yet. Use `/roll` first.", ephemeral=True)
@@ -185,6 +190,9 @@ async def choose_slash(interaction: discord.Interaction, color: str):
 @bot.tree.command(name="reset", description="Resets all dice. Does not automatically roll.")
 async def reset_slash(interaction: discord.Interaction):
     """Resets the available and chosen dice. Does not automatically roll."""
+
+    print("LOG: reset")
+
     game.reset_dice()
     bot.available_dice = {}
     bot.chosen_dice_this_round = {}
@@ -194,6 +202,8 @@ async def reset_slash(interaction: discord.Interaction):
 @bot.tree.command(name="done", description="Ends your turn, shows unchosen dice, and resets the dice tray.")
 async def done_slash(interaction: discord.Interaction):
     """Summarizes unchosen dice from the round and resets the game state."""
+
+    print("LOG: done")
 
     response_parts = ["--- **End of Turn Summary** ---"]
 
