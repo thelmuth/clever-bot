@@ -27,7 +27,7 @@ async def on_ready():
     # For faster testing, you might sync to a specific guild (see commented out sync_guild_commands)
     try:
         synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        print(f"Synced {len(synced)} commands:", [com.name for com in synced])
     except Exception as e:
         print(e)
 
@@ -124,7 +124,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 async def roll_slash(interaction: discord.Interaction):
     """Rolls dice. If dice are already available, re-rolls only those. Otherwise, rolls all 6 dice."""
 
-    print("LOG: roll")
+    print("LOG: roll |", interaction.user)
 
     roll_action_description = ""
 
@@ -151,7 +151,7 @@ async def roll_slash(interaction: discord.Interaction):
 async def choose_slash(interaction: discord.Interaction, color: str):
     """Chooses a die from the available dice and updates game state."""
 
-    print("LOG: choose")
+    print("LOG: choose |", interaction.user)
 
     # Initial availability checks (slightly simplified as game.choose_die also checks)
     if not bot.available_dice and not bot.chosen_dice_this_round and not bot.discarded_dice_this_round:
@@ -191,7 +191,7 @@ async def choose_slash(interaction: discord.Interaction, color: str):
 async def reset_slash(interaction: discord.Interaction):
     """Resets the available and chosen dice. Does not automatically roll."""
 
-    print("LOG: reset")
+    print("LOG: reset |", interaction.user)
 
     game.reset_dice()
     bot.available_dice = {}
@@ -203,7 +203,7 @@ async def reset_slash(interaction: discord.Interaction):
 async def done_slash(interaction: discord.Interaction):
     """Summarizes unchosen dice from the round and resets the game state."""
 
-    print("LOG: done")
+    print("LOG: done |", interaction.user)
 
     response_parts = ["--- **End of Turn Summary** ---"]
 
@@ -252,6 +252,12 @@ async def done_slash(interaction: discord.Interaction):
     bot.discarded_dice_this_round = {}
     # game.reset_dice() # Call this if it ever does more than return a string
 
+@bot.tree.command(name="test123", description="Ends your turn, shows unchosen dice, and resets the dice tray.")
+async def test123_slash(interaction: discord.Interaction):
+
+    print("LOG: test123 |", interaction.user)
+    await interaction.response.send_message("tested new command!")
+
 # Remove the old prefix command error handler for choose:
 # @choose.error (delete this and its function definition)
 
@@ -262,6 +268,7 @@ async def done_slash(interaction: discord.Interaction):
 @commands.guild_only()
 @commands.is_owner()
 async def syncguild(ctx):
+    print("Running !syncguild")
     bot.tree.copy_global_to(guild=ctx.guild)
     synced = await bot.tree.sync(guild=ctx.guild)
     await ctx.send(f"Synced {len(synced)} commands to this guild.")
