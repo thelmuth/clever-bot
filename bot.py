@@ -1,3 +1,7 @@
+"""
+Note to self: to update new commands, restart discord client
+"""
+
 import discord
 # Keep 'commands' for BOT_TOKEN and other potential utilities, but primary interaction will be slash.
 from discord.ext import commands
@@ -123,6 +127,21 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 @bot.tree.command(name="ping", description="A simple test command to check if slash commands are working.")
 async def ping_slash(interaction: discord.Interaction):
     await interaction.response.send_message("Pong!", ephemeral=True)
+
+
+@bot.tree.command(name="clever_help", description="Prints help.")
+async def clever_help_slash(interaction: discord.Interaction):
+    """Prints help info."""
+
+    print("LOG: clever_help |", interaction.user)
+
+    help_desc = """Instructions for using the Clever bot:
+- `/roll` - roll the dice. Use this to start your turn, and to reroll any remaining available dice.
+- `/take <color>` - take the available die of the color you give. After you do this, you should /roll again unless you have taken your 3 dice
+- `/done` - use this after you've taken your 3 dice to display the dice available to others"""
+
+    await interaction.response.send_message(help_desc)
+
 
 @bot.tree.command(name="roll", description="Rolls dice. Re-rolls available dice or does a full roll if none are available.")
 async def roll_slash(interaction: discord.Interaction):
