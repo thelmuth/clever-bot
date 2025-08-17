@@ -78,7 +78,7 @@ async def _send_dice_state_update(interaction: discord.Interaction, action_messa
     elif not bot.available_dice and is_follow_up : # if it's a followup after a choose that cleared available
          response_parts.append("No more dice available to take. Use `/roll` to re-roll if your turn continues, or `/done`.")
     elif bot.available_dice :
-         response_parts.append("Use /take color:<color>` to pick an available die, or `/roll` to re-roll available dice.")
+         response_parts.append("Use `/take color:<color>` to pick an available die, or `/roll` to re-roll available dice.")
     else: # Should ideally be caught by initial roll state if no dice anywhere.
          response_parts.append("Use `/roll` to start a new round with fresh dice.")
 
@@ -189,7 +189,9 @@ async def take_slash(interaction: discord.Interaction, color: str):
     # await interaction.response.send_message(message) # Corrected variable name in comment too
     # Then, send the comprehensive state update as a follow-up.
     # Pass no action_message here as the primary action was already sent.
-    await _send_dice_state_update(interaction, action_message="", is_follow_up=True)
+
+    ### TMH: commenting out, so that you don't get so many messages since it seems like this one is unnecessary
+    # await _send_dice_state_update(interaction, action_message="", is_follow_up=True)
 
 # @bot.tree.command(name="reset", description="Resets all dice. Does not automatically roll.")
 # async def reset_slash(interaction: discord.Interaction):
@@ -211,9 +213,14 @@ async def done_slash(interaction: discord.Interaction):
 
     response_parts = ["--- **End of Turn Summary** ---"]
 
+    response_parts.append("\n**Chosen Dice:**")
+    sorted_chosen = sorted(bot.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
+    for color, value in sorted_chosen:
+        response_parts.append(f"- {color.capitalize()}: {value}")
+
     response_parts.append("\n**Dice available to other players:**")
 
-    for_others = sorted(bot.available_dice.items() + bot.discarded_dice_this_round.items(), key=lambda x: (x[1], x[0]))
+    for_others = sorted(list(bot.available_dice.items()) + list(bot.discarded_dice_this_round.items()), key=lambda x: (x[1], x[0]))
     for color, value in for_others:
         response_parts.append(f"- {color.capitalize()}: {value}")
 
