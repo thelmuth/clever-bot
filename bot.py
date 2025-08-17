@@ -38,6 +38,10 @@ def get_game_data(interaction: discord.Interaction) -> game.GameData | None:
     """Retrieves the game data for the channel, returns None if not found."""
     return bot.games.get(interaction.channel_id)
 
+def log(action: str, interaction: discord.Interaction):
+    """Logs interaction"""
+    print(f"LOG: {action:8} | Channel: {interaction.channel_id} | User: {interaction.user}")
+
 async def _send_dice_state_update(interaction: discord.Interaction, game_data: game.GameData, action_message: str = "", is_follow_up: bool = False):
     """
     Constructs and sends a message displaying the current state of all dice categories for a given game.
@@ -127,8 +131,7 @@ async def ping_slash(interaction: discord.Interaction):
 @bot.tree.command(name="clever_help", description="Prints help.")
 async def clever_help_slash(interaction: discord.Interaction):
     """Prints help info."""
-
-    print("LOG: clever_help |", interaction.user)
+    log("clever_help", interaction)
 
     help_desc = """Instructions for using the Clever bot:
 - `/new_game` - start a new game in this channel.
@@ -142,7 +145,7 @@ async def clever_help_slash(interaction: discord.Interaction):
 @bot.tree.command(name="new_game", description="Starts a new game of That's Pretty Clever in this channel.")
 async def new_game_slash(interaction: discord.Interaction):
     """Creates a new game instance for the current channel."""
-    print(f"LOG: new_game | Channel: {interaction.channel_id} | User: {interaction.user}")
+    log("new_game", interaction)
 
     # Create a new GameData object and assign it to the channel
     bot.games[interaction.channel_id] = game.GameData()
@@ -153,7 +156,7 @@ async def new_game_slash(interaction: discord.Interaction):
 @bot.tree.command(name="roll", description="Rolls dice. Re-rolls available dice or does a full roll if none are available.")
 async def roll_slash(interaction: discord.Interaction):
     """Rolls dice. If dice are already available, re-rolls only those. Otherwise, rolls all 6 dice."""
-    print("LOG: roll |", interaction.user)
+    log("roll", interaction)
 
     game_data = get_game_data(interaction)
     if not game_data:
@@ -174,7 +177,7 @@ async def roll_slash(interaction: discord.Interaction):
 @app_commands.describe(color="The color of the die to take.")
 async def take_slash(interaction: discord.Interaction, color: str):
     """Takes a die from the available dice and updates game state."""
-    print(f"LOG: take {color} |", interaction.user)
+    log("take", interaction)
 
     game_data = get_game_data(interaction)
     if not game_data:
@@ -195,7 +198,7 @@ async def take_slash(interaction: discord.Interaction, color: str):
 @bot.tree.command(name="done", description="Ends your turn, shows unchosen dice, and resets the dice tray.")
 async def done_slash(interaction: discord.Interaction):
     """Summarizes unchosen dice from the round and resets the game state."""
-    print("LOG: done |", interaction.user)
+    log("done", interaction)
 
     game_data = get_game_data(interaction)
     if not game_data:
