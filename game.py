@@ -1,17 +1,26 @@
 import random
 
-DICE_COLORS = ["blue", "green", "orange", "purple", "yellow", "white"]
+# Indexed on game number:
+# 1 = That's Pretty Clever
+# 2 = Twice as Clever
+# etc.
+DICE_COLORS = {1:["blue", "green", "orange", "purple", "yellow", "white"],
+               2:["blue", "green", "silver", "pink", "yellow", "white"],
+               3:["navy", "teal", "brown", "pink", "yellow", "white"],
+               4:["blue", "green", "gray", "pink", "yellow", "white"]
+               }
 
 class GameData:
     """Holds all data for a single game of That's Pretty Clever."""
-    def __init__(self):
+    def __init__(self, game_number):
         self.available_dice = {}
         self.chosen_dice_this_round = {}
         self.discarded_dice_this_round = {}
+        self.dice_colors = DICE_COLORS[game_number]
 
     def roll_dice(self):
         """Rolls all six dice for That's Pretty Clever."""
-        self.available_dice = {color: random.randint(1, 6) for color in DICE_COLORS}
+        self.available_dice = {color: random.randint(1, 6) for color in self.dice_colors}
         self.chosen_dice_this_round = {}
         self.discarded_dice_this_round = {}
         return self.available_dice
@@ -31,7 +40,7 @@ class GameData:
             - message (str): A message describing the outcome (e.g., die chosen, error).
         """
         color_to_choose = color_to_choose.lower()
-        if color_to_choose not in DICE_COLORS:
+        if color_to_choose not in self.dice_colors:
             return None, "Invalid dice color. Please choose from Blue, Green, Orange, Purple, Yellow, White."
 
         if color_to_choose not in self.available_dice:

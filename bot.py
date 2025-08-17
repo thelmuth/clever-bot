@@ -143,14 +143,20 @@ async def clever_help_slash(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="new_game", description="Starts a new game of That's Pretty Clever in this channel.")
-async def new_game_slash(interaction: discord.Interaction):
+@app_commands.describe(game_number="A number 1-4 for which game you are playing (1 for That's Pretty Clever, 2 for Twice as Clever, etc.).")
+async def new_game_slash(interaction: discord.Interaction, game_number: int):
     """Creates a new game instance for the current channel."""
     log("new_game", interaction)
 
     # Create a new GameData object and assign it to the channel
-    bot.games[interaction.channel_id] = game.GameData()
+    bot.games[interaction.channel_id] = game.GameData(game_number)
 
-    await interaction.response.send_message("A new game of That's Pretty Clever has been started! Use `/roll` to begin.")
+    names = {1: "That's Pretty Clever",
+             2: "Twice as Clever",
+             3: "Clever Cubed",
+             4: "Clever 4Ever"}
+
+    await interaction.response.send_message(f"A new game of {names[game_number]} has been started! Use `/roll` to begin.")
 
 
 @bot.tree.command(name="roll", description="Rolls dice. Re-rolls available dice or does a full roll if none are available.")
