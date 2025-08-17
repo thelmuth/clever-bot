@@ -1,4 +1,6 @@
+# Tom's files
 clever.key
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
