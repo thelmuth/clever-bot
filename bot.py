@@ -24,9 +24,7 @@ bot = commands.Bot(command_prefix="!", intents=intents) # Prefix can be kept for
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
-    bot.available_dice = {}
-    bot.chosen_dice_this_round = {}
-    bot.discarded_dice_this_round = {} # Add this line
+    bot.games = {}  # Dictionary to store game states per channel
     # Try to sync commands globally. This can take up to an hour to propagate.
     # For faster testing, you might sync to a specific guild (see commented out sync_guild_commands)
     try:
@@ -35,71 +33,68 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-# --- Helper Function to Send Dice State ---
-async def _send_dice_state_update(interaction: discord.Interaction, action_message: str = "", is_follow_up: bool = False):
+# --- Helper Functions ---
+def get_game_data(interaction: discord.Interaction) -> game.GameData | None:
+    """Retrieves the game data for the channel, returns None if not found."""
+    return bot.games.get(interaction.channel_id)
+
+async def _send_dice_state_update(interaction: discord.Interaction, game_data: game.GameData, action_message: str = "", is_follow_up: bool = False):
     """
-    Constructs and sends a message displaying the current state of all dice categories.
+    Constructs and sends a message displaying the current state of all dice categories for a given game.
     Sorts dice within each category by value, then color.
     """
     response_parts = []
 
-    if action_message: # Prepend any specific action message (e.g., from choose_die or roll type)
+    if action_message:
         response_parts.append(action_message)
 
     response_parts.append("\n--- **Current Dice States** ---")
 
     # Chosen Dice
-    if bot.chosen_dice_this_round:
+    if game_data.chosen_dice_this_round:
         response_parts.append("\n**Chosen Dice:**")
-        sorted_chosen = sorted(bot.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
+        sorted_chosen = sorted(game_data.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_chosen:
             response_parts.append(f"- {color.capitalize()}: {value}")
     else:
         response_parts.append("\n**Chosen Dice:** None")
 
     # Available Dice
-    if bot.available_dice:
+    if game_data.available_dice:
         response_parts.append("\n**Available Dice (for choosing or re-rolling):**")
-        sorted_available = sorted(bot.available_dice.items(), key=lambda x: (x[1], x[0]))
+        sorted_available = sorted(game_data.available_dice.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_available:
             response_parts.append(f"- {color.capitalize()}: {value}")
     else:
         response_parts.append("\n**Available Dice:** None")
 
     # Discarded Dice
-    if bot.discarded_dice_this_round:
+    if game_data.discarded_dice_this_round:
         response_parts.append("\n**Discarded Dice (this round):**")
-        sorted_discarded = sorted(bot.discarded_dice_this_round.items(), key=lambda x: (x[1], x[0]))
+        sorted_discarded = sorted(game_data.discarded_dice_this_round.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_discarded:
             response_parts.append(f"- {color.capitalize()}: {value}")
     else:
         response_parts.append("\n**Discarded Dice (this round):** None")
 
     response_parts.append("\n------------------------------")
-    # Add contextual next step advice
-    if not bot.available_dice and (bot.chosen_dice_this_round or bot.discarded_dice_this_round) and not is_follow_up: # if it's a primary message after a roll that cleared available
+    # Contextual next step advice
+    if not game_data.available_dice and (game_data.chosen_dice_this_round or game_data.discarded_dice_this_round):
         response_parts.append("All dice have been processed for this roll! Use `/roll` for a new set of dice if your turn continues, or `/done` if finished.")
-    elif not bot.available_dice and is_follow_up : # if it's a followup after a choose that cleared available
-         response_parts.append("No more dice available to take. Use `/roll` to re-roll if your turn continues, or `/done`.")
-    elif bot.available_dice :
-         response_parts.append("Use `/take color:<color>` to pick an available die, or `/roll` to re-roll available dice.")
-    else: # Should ideally be caught by initial roll state if no dice anywhere.
-         response_parts.append("Use `/roll` to start a new round with fresh dice.")
-
+    elif game_data.available_dice:
+        response_parts.append("Use `/take color:<color>` to pick an available die, or `/roll` to re-roll available dice.")
+    else:
+        response_parts.append("Use `/roll` to start a new round with fresh dice.")
 
     full_response = "\n".join(response_parts)
 
-    # Ensure message length is within Discord's limits (2000 characters)
     if len(full_response) > 2000:
         full_response = full_response[:1990] + "... (truncated)"
 
     if is_follow_up:
-        # Follow-up messages can be ephemeral or public. Let's make state updates public for now.
         await interaction.followup.send(full_response, ephemeral=False)
     else:
         await interaction.response.send_message(full_response)
-
-# --- End of _send_dice_state_update function ---
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -136,6 +131,7 @@ async def clever_help_slash(interaction: discord.Interaction):
     print("LOG: clever_help |", interaction.user)
 
     help_desc = """Instructions for using the Clever bot:
+- `/new_game` - start a new game in this channel.
 - `/roll` - roll the dice. Use this to start your turn, and to reroll any remaining available dice.
 - `/take <color>` - take the available die of the color you give. After you do this, you should /roll again unless you have taken your 3 dice
 - `/done` - use this after you've taken your 3 dice to display the dice available to others"""
@@ -143,122 +139,98 @@ async def clever_help_slash(interaction: discord.Interaction):
     await interaction.response.send_message(help_desc)
 
 
+@bot.tree.command(name="new_game", description="Starts a new game of That's Pretty Clever in this channel.")
+async def new_game_slash(interaction: discord.Interaction):
+    """Creates a new game instance for the current channel."""
+    print(f"LOG: new_game | Channel: {interaction.channel_id} | User: {interaction.user}")
+
+    # Create a new GameData object and assign it to the channel
+    bot.games[interaction.channel_id] = game.GameData()
+
+    await interaction.response.send_message("A new game of That's Pretty Clever has been started! Use `/roll` to begin.")
+
+
 @bot.tree.command(name="roll", description="Rolls dice. Re-rolls available dice or does a full roll if none are available.")
 async def roll_slash(interaction: discord.Interaction):
     """Rolls dice. If dice are already available, re-rolls only those. Otherwise, rolls all 6 dice."""
-
     print("LOG: roll |", interaction.user)
 
-    roll_action_description = ""
+    game_data = get_game_data(interaction)
+    if not game_data:
+        await interaction.response.send_message("No game is currently running in this channel. Use `/new_game` to start.", ephemeral=True)
+        return
 
-    if bot.available_dice:
+    roll_action_description = ""
+    if game_data.available_dice:
         roll_action_description = "Re-rolling available dice..."
-        for color_key in list(bot.available_dice.keys()): # Use a different variable name to avoid conflict
-            new_value = random.randint(1, 6)
-            bot.available_dice[color_key] = new_value
-        # bot.chosen_dice_this_round is NOT reset
-        # bot.discarded_dice_this_round is NOT reset
+        game_data.reroll_available_dice()
     else:
         roll_action_description = "Rolling all new dice..."
-        full_roll_results = game.roll_dice()
-        bot.available_dice = dict(full_roll_results)
-        bot.chosen_dice_this_round = {}
-        bot.discarded_dice_this_round = {}
+        game_data.roll_dice()
 
-    # For /roll, the _send_dice_state_update IS the primary response.
-    # Pass the roll_action_description to be prepended to the state display.
-    await _send_dice_state_update(interaction, action_message=roll_action_description, is_follow_up=False)
+    await _send_dice_state_update(interaction, game_data, action_message=roll_action_description)
 
 @bot.tree.command(name="take", description="Takes a die from the available dice.")
 @app_commands.describe(color="The color of the die to take.")
 async def take_slash(interaction: discord.Interaction, color: str):
-    """takes a die from the available dice and updates game state."""
-
+    """Takes a die from the available dice and updates game state."""
     print(f"LOG: take {color} |", interaction.user)
 
-    # Initial availability checks (slightly simplified as game.choose_die also checks)
-    if not bot.available_dice and not bot.chosen_dice_this_round and not bot.discarded_dice_this_round:
-        await interaction.response.send_message("No dice have been rolled yet. Use `/roll` first.", ephemeral=True)
+    game_data = get_game_data(interaction)
+    if not game_data:
+        await interaction.response.send_message("No game is currently running in this channel. Use `/new_game` to start.", ephemeral=True)
         return
-    # More specific check if all dice from a roll are gone (either chosen or discarded)
-    # but it's not a fresh game state (i.e., chosen or discarded are populated)
-    elif not bot.available_dice and (bot.chosen_dice_this_round or bot.discarded_dice_this_round):
-         await interaction.response.send_message("No more dice available from the current roll to take. Use `/roll` to re-roll or `/reset` for a new roll.", ephemeral=True)
-         return
 
+    # The new game.choose_die method handles all logic, including checks for availability.
+    chosen_value, message = game_data.choose_die(color)
 
-    # Call game.choose_die, now passing all three state dictionaries
-    chosen_value, message = game.choose_die(
-        bot.available_dice,
-        bot.chosen_dice_this_round,
-        bot.discarded_dice_this_round, # Pass the new dictionary
-        color
-    )
-
-    # Send the immediate feedback from choose_die (e.g., "You chose X... Dice Y, Z discarded...")
-    # This message will be public if a successful choice was made, ephemeral for errors.
     if chosen_value is not None:
+        # On a successful choice, send the result message and then the updated state
         await interaction.response.send_message(message)
+        await _send_dice_state_update(interaction, game_data, is_follow_up=True)
     else:
-        # Errors like "invalid color", "die not available", "already chosen/discarded"
-        await interaction.response.send_message(message, ephemeral=True) # Send error message from game.choose_die
-        return # Do not proceed to send dice state update if there was an error
-
-    # Send the direct result of the choice first (e.g., "You chose Blue... X, Y discarded")
-    # await interaction.response.send_message(message) # Corrected variable name in comment too
-    # Then, send the comprehensive state update as a follow-up.
-    # Pass no action_message here as the primary action was already sent.
-
-    ### TMH: commenting out, so that you don't get so many messages since it seems like this one is unnecessary
-    # await _send_dice_state_update(interaction, action_message="", is_follow_up=True)
-
-# @bot.tree.command(name="reset", description="Resets all dice. Does not automatically roll.")
-# async def reset_slash(interaction: discord.Interaction):
-#     """Resets the available and chosen dice. Does not automatically roll."""
-
-#     print("LOG: reset |", interaction.user)
-
-#     game.reset_dice()
-#     bot.available_dice = {}
-#     bot.chosen_dice_this_round = {}
-#     bot.discarded_dice_this_round = {} # Add this line
-#     await interaction.response.send_message("All dice have been reset. Use `/roll` to roll new dice.")
+        # On failure (e.g., die not available), send the error message ephemerally.
+        await interaction.response.send_message(message, ephemeral=True)
 
 @bot.tree.command(name="done", description="Ends your turn, shows unchosen dice, and resets the dice tray.")
 async def done_slash(interaction: discord.Interaction):
     """Summarizes unchosen dice from the round and resets the game state."""
-
     print("LOG: done |", interaction.user)
+
+    game_data = get_game_data(interaction)
+    if not game_data:
+        await interaction.response.send_message("No game is currently running in this channel. Use `/new_game` to start.", ephemeral=True)
+        return
 
     response_parts = ["--- **End of Turn Summary** ---"]
 
-    response_parts.append("\n**Chosen Dice:**")
-    sorted_chosen = sorted(bot.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
-    for color, value in sorted_chosen:
-        response_parts.append(f"- {color.capitalize()}: {value}")
+    # Chosen Dice
+    if game_data.chosen_dice_this_round:
+        response_parts.append("\n**Your Chosen Dice:**")
+        sorted_chosen = sorted(game_data.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
+        for color, value in sorted_chosen:
+            response_parts.append(f"- {color.capitalize()}: {value}")
+    else:
+        response_parts.append("\n**Your Chosen Dice:** None")
 
-    response_parts.append("\n**Dice available to other players:**")
-
-    for_others = sorted(list(bot.available_dice.items()) + list(bot.discarded_dice_this_round.items()), key=lambda x: (x[1], x[0]))
-    for color, value in for_others:
-        response_parts.append(f"- {color.capitalize()}: {value}")
+    # Dice for others
+    for_others = sorted(list(game_data.available_dice.items()) + list(game_data.discarded_dice_this_round.items()), key=lambda x: (x[1], x[0]))
+    if for_others:
+        response_parts.append("\n**Dice available to other players:**")
+        for color, value in for_others:
+            response_parts.append(f"- {color.capitalize()}: {value}")
+    else:
+        response_parts.append("\n**Dice available to other players:** None")
 
     response_parts.append("\n------------------------------")
-    response_parts.append("The dice tray has been reset. Use `/roll` to start a new turn/round.")
+    response_parts.append("The dice tray has been reset. Use `/roll` to start a new turn.")
 
     summary_message = "\n".join(response_parts)
 
-    # Ensure message length is within Discord's limits
-    if len(summary_message) > 2000:
-        summary_message = summary_message[:1990] + "... (truncated)"
+    # Reset the game state for the channel
+    game_data.reset()
 
     await interaction.response.send_message(summary_message)
-
-    # Reset all game states
-    bot.available_dice = {}
-    bot.chosen_dice_this_round = {}
-    bot.discarded_dice_this_round = {}
-    # game.reset_dice() # Call this if it ever does more than return a string
 
 
 # --- Optional: Command to sync commands to a specific guild for faster testing ---
