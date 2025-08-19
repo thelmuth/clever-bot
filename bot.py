@@ -137,6 +137,7 @@ async def clever_help_slash(interaction: discord.Interaction):
 - `/new_game` - start a new game in this channel.
 - `/roll` - roll the dice. Use this to start your turn, and to reroll any remaining available dice.
 - `/take <color>` - take the available die of the color you give. After you do this, you should /roll again unless you have taken your 3 dice
+- `/return <color>` - return a die from the discarded dice to be available.
 - `/done` - use this after you've taken your 3 dice to display the dice available to others"""
 
     await interaction.response.send_message(help_desc)
@@ -200,6 +201,29 @@ async def take_slash(interaction: discord.Interaction, color: str):
     else:
         # On failure (e.g., die not available), send the error message ephemerally.
         await interaction.response.send_message(message, ephemeral=True)
+
+@bot.tree.command(name="return", description="Return a die from the unavailable dice (silver tray) to become available again.")
+@app_commands.describe(color="The color of the die to return.")
+async def return_slash(interaction: discord.Interaction, color: str):
+    """Return a die from silver tray and updates game state."""
+    log("return", interaction)
+
+    game_data = get_game_data(interaction)
+    if not game_data:
+        await interaction.response.send_message("No game is currently running in this channel. Use `/new_game` to start.", ephemeral=True)
+        return
+
+    # The game.return_die method handles all logic, including checks for availability.
+    chosen_value, message = game_data.return_die(color)
+
+    if chosen_value is not None:
+        # On a successful choice, send the result message and then the updated state
+        await interaction.response.send_message(message)
+        await _send_dice_state_update(interaction, game_data, is_follow_up=True)
+    else:
+        # On failure (e.g., die not available), send the error message ephemerally.
+        await interaction.response.send_message(message, ephemeral=True)
+
 
 @bot.tree.command(name="done", description="Ends your turn, shows unchosen dice, and resets the dice tray.")
 async def done_slash(interaction: discord.Interaction):

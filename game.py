@@ -41,7 +41,7 @@ class GameData:
         """
         color_to_choose = color_to_choose.lower()
         if color_to_choose not in self.dice_colors:
-            return None, "Invalid dice color. Please choose from Blue, Green, Orange, Purple, Yellow, White."
+            return None, f"Invalid dice color. Please choose from {", ".join(self.dice_colors)}."
 
         if color_to_choose not in self.available_dice:
             # Check if it was already chosen or discarded this round
@@ -72,6 +72,27 @@ class GameData:
             message += "\nDiscarded due to being lower than chosen: " + ", ".join(discard_details) + "."
 
         return chosen_value, message
+
+    # TMH
+    def return_die(self, color_to_choose):
+        """
+        Allows a player to return a die from the silver platter.
+        Returns:
+            - success (bool): True, or None if invalid choice.
+            - message (str): A message describing the outcome (e.g., die returned, error).
+        """
+        color_to_choose = color_to_choose.lower()
+        if color_to_choose not in self.dice_colors:
+            return None, f"Invalid dice color. Please choose from {", ".join(self.dice_colors)}."
+        
+        if color_to_choose not in self.discarded_dice_this_round:
+            return None, f"{color_to_choose.capitalize()} die has not been discarded this round."
+        
+        chosen_value = self.discarded_dice_this_round.pop(color_to_choose)
+        self.available_dice[color_to_choose] = chosen_value
+        message = f"You returned the {color_to_choose.capitalize()} die to the available dice pool."
+
+        return True, message
 
     def reset(self):
         """Resets the dice state for a new round."""
