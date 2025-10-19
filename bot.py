@@ -21,6 +21,93 @@ intents = discord.Intents.default()
 # We still use commands.Bot as the base, but we'll attach a CommandTree to it
 bot = commands.Bot(command_prefix="!", intents=intents) # Prefix can be kept for other bot owner commands or removed
 
+# Dice emoji
+white_dice = [None,
+			  "<:die1:790027072998342666>",
+			  "<:die2:790028311756668960>",
+			  "<:die3:790028312167841803>",
+			  "<:die4:790028312348065842>",
+			  "<:die5:790028312386076713>",
+			  "<:die6:790028312495128616>"]
+
+yellow_dice = [None,
+			  "<:yellow1:1420961067227418684>",
+			  "<:yellow2:1420961070041792613>",
+			  "<:yellow3:1420961240045584475>",
+			  "<:yellow4:1420961073804345537>",
+			  "<:yellow5:1420961238728445981>",
+			  "<:yellow6:1420961041483042856>"]
+			  
+purple_dice = [None,
+			  "<:purple1:1420961042732814397> ",
+			  "<:purple2:1420961043877986334> ",
+			  "<:purple3:1420961045169831936> ",
+			  "<:purple4:1420961046868525147> ",
+			  "<:purple5:1420961048399188079> ",
+			  "<:purple6:1420961050311790782>"]
+			  
+red_dice = [None,
+			  "<:red1:1420961052216266812> ",
+			  "<:red2:1420961054376333385> ",
+			  "<:red3:1420961056628408470> ",
+			  "<:red4:1420961196080889919> ",
+			  "<:red5:1420961059958816798> ",
+			  "<:red6:1420961194667282593>"]
+			  
+blue_dice = [None,
+			  "<:blue1:1421167198897963099>",
+			  "<:blue2:1421167200491798528>",
+			  "<:blue3:1421167202165329950>",
+			  "<:blue4:1421167204472197140>",
+			  "<:blue5:1421167206078877840>",
+			  "<:blue6:1421167207643091004>"]
+			  
+orange_dice = [None,
+			  "<:orange1:1421167311280406588>",
+			  "<:orange2:1421167301973250169>",
+			  "<:orange3:1421167303533269002>",
+			  "<:orange4:1421167304921579650>",
+			  "<:orange5:1421167307320856709>",
+			  "<:orange6:1421167309526925332>"]
+
+green_dice = [None,
+			  "<:green1:1421167253411463260>",
+			  "<:green2:1421167254841856121>",
+			  "<:green3:1421167256578166784>",
+			  "<:green4:1421167258247626914>",
+			  "<:green5:1421167259883147315>",
+			  "<:green6:1421167261409873961>"]			  
+
+gray_dice = [None,
+			  "<:gray1:1421167236454027417>",
+			  "<:gray2:1421167238106583232>",
+			  "<:gray3:1421167239599755347>",
+			  "<:gray4:1421167242007150653>",
+			  "<:gray5:1421167243756175472>",
+			  "<:gray6:1421167234776043561>"]
+			  
+pink_dice = [None,
+			  "<:pink1:1421167321929744435>",
+			  "<:pink2:1421167323825311754>",
+			  "<:pink3:1421167325389787246>",
+			  "<:pink4:1421167326753193984>",
+			  "<:pink5:1421167328858734744>",
+			  "<:pink6:1421167320797155378>"]
+			  
+dice_emoji = {"white": white_dice,
+			  "yellow": yellow_dice,
+			  "purple": purple_dice,
+			  "red": red_dice,
+			  "brown": red_dice,
+			  "blue": blue_dice,
+			  "navy": blue_dice,
+			  "orange": orange_dice,
+			  "green": green_dice,
+			  "teal": green_dice,
+			  "gray": gray_dice,
+			  "silver": gray_dice,
+			  "pink": pink_dice}
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
@@ -59,7 +146,7 @@ async def _send_dice_state_update(interaction: discord.Interaction, game_data: g
         response_parts.append("\n**Chosen Dice:**")
         sorted_chosen = sorted(game_data.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_chosen:
-            response_parts.append(f"- {color.capitalize()}: {value}")
+            response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Chosen Dice:** None")
 
@@ -68,7 +155,7 @@ async def _send_dice_state_update(interaction: discord.Interaction, game_data: g
         response_parts.append("\n**Available Dice (for choosing or re-rolling):**")
         sorted_available = sorted(game_data.available_dice.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_available:
-            response_parts.append(f"- {color.capitalize()}: {value}")
+            response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Available Dice:** None")
 
@@ -77,7 +164,7 @@ async def _send_dice_state_update(interaction: discord.Interaction, game_data: g
         response_parts.append("\n**Discarded Dice (this round):**")
         sorted_discarded = sorted(game_data.discarded_dice_this_round.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_discarded:
-            response_parts.append(f"- {color.capitalize()}: {value}")
+            response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Discarded Dice (this round):** None")
 
@@ -242,7 +329,7 @@ async def done_slash(interaction: discord.Interaction):
         response_parts.append("\n**Your Chosen Dice:**")
         sorted_chosen = sorted(game_data.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
         for color, value in sorted_chosen:
-            response_parts.append(f"- {color.capitalize()}: {value}")
+            response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Your Chosen Dice:** None")
 
@@ -251,7 +338,7 @@ async def done_slash(interaction: discord.Interaction):
     if for_others:
         response_parts.append("\n**Dice available to other players:**")
         for color, value in for_others:
-            response_parts.append(f"- {color.capitalize()}: {value}")
+            response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Dice available to other players:** None")
 
