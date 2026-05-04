@@ -6,7 +6,7 @@ import random
 # etc.
 DICE_COLORS = {1:["blue", "green", "orange", "purple", "yellow", "white"],
                2:["blue", "green", "silver", "pink", "yellow", "white"],
-               3:["navy", "teal", "brown", "pink", "yellow", "white"],
+               3:["purple", "teal", "brown", "pink", "yellow", "white"],
                4:["blue", "green", "gray", "pink", "yellow", "white"]
                }
 
