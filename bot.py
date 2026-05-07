@@ -160,8 +160,7 @@ async def _send_dice_state_update(interaction: discord.Interaction, game_data: g
     # Chosen Dice
     if game_data.chosen_dice_this_round:
         response_parts.append("\n**Chosen Dice:**")
-        sorted_chosen = sorted(game_data.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
-        for color, value in sorted_chosen:
+        for color, value in game_data.chosen_dice_this_round.items():
             response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Chosen Dice:** None")
@@ -343,8 +342,7 @@ async def done_slash(interaction: discord.Interaction):
     # Chosen Dice
     if game_data.chosen_dice_this_round:
         response_parts.append("\n**Your Chosen Dice:**")
-        sorted_chosen = sorted(game_data.chosen_dice_this_round.items(), key=lambda x: (x[1], x[0]))
-        for color, value in sorted_chosen:
+        for color, value in game_data.chosen_dice_this_round.items():
             response_parts.append(f"- {color.capitalize()}: {dice_emoji[color][value]}")
     else:
         response_parts.append("\n**Your Chosen Dice:** None")
