@@ -327,6 +327,15 @@ async def return_slash(interaction: discord.Interaction, color: str):
         await interaction.response.send_message(message, ephemeral=True)
 
 
+@bot.tree.command(name="qroll", description="Rolls the Qwixx dice: two white, red, yellow, green, and blue.")
+async def qroll_slash(interaction: discord.Interaction):
+    log("qroll", interaction)
+    w1, w2 = random.randint(1, 6), random.randint(1, 6)
+    r, y, g, b = random.randint(1, 6), random.randint(1, 6), random.randint(1, 6), random.randint(1, 6)
+    response = f"{white_dice[w1]} {white_dice[w2]} {red_dice[r]} {yellow_dice[y]} {green_dice[g]} {blue_dice[b]}"
+    await interaction.response.send_message(response)
+
+
 @bot.tree.command(name="done", description="Ends your turn, shows unchosen dice, and resets the dice tray.")
 async def done_slash(interaction: discord.Interaction):
     """Summarizes unchosen dice from the round and resets the game state."""
