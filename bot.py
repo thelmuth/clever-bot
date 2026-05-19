@@ -204,24 +204,18 @@ async def _send_dice_state_update(interaction: discord.Interaction, game_data: g
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-    if isinstance(error, app_commands.MissingParameter):
-        param_name = error.parameter.name
-        await interaction.response.send_message(
-            f"Oops! You forgot to provide the '{param_name}'. Please include it when you use the command.",
-            ephemeral=True # Only the user who invoked the command will see this
-        )
-    elif isinstance(error, app_commands.CommandNotFound):
-        await interaction.response.send_message("Sorry, I don't recognize that command.", ephemeral=True)
-    # Add more specific error checks here if needed
-    # For example, app_commands.TransformerError for conversion issues
-    # app_commands.CheckFailure for failed checks
-    else:
-        # Generic error message for other cases
-        print(f"Unhandled error in slash command: {error}") # Log the full error to console
+    # Expired interaction (e.g. bot reconnected after brief disconnect); nothing we can do.
+    if isinstance(error, app_commands.CommandInvokeError) and isinstance(error.original, discord.NotFound) and error.original.code == 10062:
+        print(f"Expired interaction ignored: {interaction.command.name if interaction.command else 'unknown'}")
+        return
+    print(f"Unhandled error in slash command: {error}")
+    try:
         await interaction.response.send_message(
             "An unexpected error occurred while trying to run that command. I've logged the issue.",
             ephemeral=True
         )
+    except discord.NotFound:
+        pass
 
 # --- Slash Command Definitions ---
 
